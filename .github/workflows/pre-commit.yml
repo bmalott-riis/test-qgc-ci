@@ -9,5 +9,14 @@ jobs:
             SKIP: qmllint
         steps:
             - uses: actions/checkout@v4
+              with:
+                  # Full history so git-clang-format can diff against the PR base.
+                  fetch-depth: 0
             - uses: actions/setup-python@v5
+            - name: Install clang-format 17
+              run: |
+                  sudo apt-get update
+                  sudo apt-get install -y clang-format-17
+                  # git-clang-format-17 ships with the package; expose it unversioned too.
+                  sudo ln -sf "$(command -v git-clang-format-17)" /usr/local/bin/git-clang-format
             - uses: pre-commit/action@v3.0.1
