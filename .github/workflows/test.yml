@@ -1,0 +1,95 @@
+name: Tests
+
+on:
+  push:
+    branches:
+      - main
+      - 'Stable*'
+    paths-ignore:
+      - 'docs/**'
+  pull_request:
+    paths:
+      - '.github/workflows/test.yml'
+      - '.github/actions/**'
+      - 'deploy/linux/**'
+      - 'src/**'
+      - 'custom/**'
+      - 'test/**'
+      - 'CMakeLists.txt'
+      - 'cmake/**'
+
+jobs:
+  test:
+    runs-on: ubuntu-22.04
+
+    defaults:
+      run:
+        shell: bash
+
+    env:
+      ARTIFACT: QGroundControl-x86_64.AppImage
+      QT_VERSION: 6.8.3
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+          fetch-depth: 1
+          fetch-tags: false
+
+      - name: Get all tags for correct version determination
+        working-directory: ${{ github.workspace }}
+        run: git fetch --all --tags -f --depth 1
+
+      - name: Initial Setup
+        uses: ./.github/actions/common
+
+      - name: Install Dependencies
+        run: |
+          chmod a+x ./tools/setup/install-dependencies-debian.sh
+          sudo ./tools/setup/install-dependencies-debian.sh
+
+      - name: Install Vulkan
+        run: |
+          wget -qO- https://packages.lunarg.com/lunarg-signing-key-pub.asc | sudo tee /etc/apt/trusted.gpg.d/lunarg.asc
+          sudo wget -qO /etc/apt/sources.list.d/lunarg-vulkan-jammy.list http://packages.lunarg.com/vulkan/lunarg-vulkan-jammy.list
+          sudo apt update
+          sudo apt install vulkan-sdk
+
+      - name: Setup Caching
+        uses: ./.github/actions/cache
+        with:
+          host: linux
+          target: linux_gcc_64
+          build-type: Debug
+          cpm-modules: ${{ runner.temp }}/shadow_build_dir/cpm_modules
+
+      - name: Install Qt for Linux (x64)
+        uses: jurplel/install-qt-action@v4
+        with:
+          version: ${{ env.QT_VERSION }}
+          host: linux
+          target: desktop
+          arch: linux_gcc_64
+          dir: ${{ runner.temp }}
+          modules: qtcharts qtlocation qtpositioning qtspeech qt5compat qtmultimedia qtserialport qtimageformats qtshadertools qtconnectivity qtquick3d qtsensors
+          cache: true
+
+      - name: Configure
+        working-directory: ${{ runner.temp }}/shadow_build_dir
+        run: ${{ env.QT_ROOT_DIR }}/bin/qt-cmake -S ${{ github.workspace }} -B . -G Ninja
+              -DCMAKE_BUILD_TYPE=Debug
+              -DQGC_BUILD_TESTING=ON
+
+      - name: Build
+        working-directory: ${{ runner.temp }}/shadow_build_dir
+        run: cmake --build . --target all --config Debug
+
+      - name: Create AppImage
+        working-directory: ${{ runner.temp }}/shadow_build_dir
+        run: cmake --install . --config Debug
+
+      - name: Run unit tests
+        working-directory: ${{ runner.temp }}/shadow_build_dir
+        run: xvfb-run -a ./${{ env.ARTIFACT }} --unittest

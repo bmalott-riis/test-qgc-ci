@@ -1,11 +1,30 @@
 name: pre-commit
 
-on: [push, pull_request]
+on:
+    # Run on PRs (checks the changed lines) and on pushes to integration
+    # branches only. Scoping push to these branches avoids a duplicate run when
+    # pushing to a branch that already has an open PR.
+    push:
+        branches:
+            - main
+            - "Stable*"
+    pull_request:
 
 jobs:
-  pre-commit:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
-      - uses: pre-commit/action@v3.0.1
+    pre-commit:
+        runs-on: ubuntu-latest
+        env:
+            SKIP: qmllint
+        steps:
+            - uses: actions/checkout@v4
+              with:
+                  # Full history so git-clang-format can diff against the PR base.
+                  fetch-depth: 0
+            - uses: actions/setup-python@v5
+            - name: Install clang-format 17
+              run: |
+                  sudo apt-get update
+                  sudo apt-get install -y clang-format-17
+                  # git-clang-format-17 ships with the package; expose it unversioned too.
+                  sudo ln -sf "$(command -v git-clang-format-17)" /usr/local/bin/git-clang-format
+            - uses: pre-commit/action@v3.0.1
