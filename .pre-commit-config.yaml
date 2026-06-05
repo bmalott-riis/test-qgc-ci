@@ -14,6 +14,6 @@ repos:
             files: ^(src|custom)/.*\.(cc|cpp|cxx|h|hpp)$
           - id: qmllint
             name: qmllint
-            entry: qmllint
-            language: system
+            entry: tools/lint/qmllint.sh
+            language: script
             files: ^(src|custom)/.*\.qml$

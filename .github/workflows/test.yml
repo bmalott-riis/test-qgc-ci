@@ -21,6 +21,7 @@ on:
 jobs:
   test:
     runs-on: ubuntu-22.04
+    timeout-minutes: 30
 
     defaults:
       run:
@@ -84,7 +85,7 @@ jobs:
 
       - name: Build
         working-directory: ${{ runner.temp }}/shadow_build_dir
-        run: cmake --build . --target all --config Debug
+        run: cmake --build . --target all --config Debug -- -j4
 
       - name: Create AppImage
         working-directory: ${{ runner.temp }}/shadow_build_dir
