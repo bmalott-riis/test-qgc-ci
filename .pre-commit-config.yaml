@@ -1,7 +1,19 @@
 repos:
--   repo: https://github.com/pre-commit/pre-commit-hooks
-    rev: v5.0.0
-    hooks:
-    -   id: check-yaml
-        args: [--allow-multiple-documents, --unsafe]
-    -   id: check-json
+    - repo: https://github.com/pre-commit/pre-commit-hooks
+      rev: v5.0.0
+      hooks:
+          - id: check-yaml
+            args: [--allow-multiple-documents, --unsafe]
+          - id: check-json
+    - repo: local
+      hooks:
+          - id: git-clang-format
+            name: git-clang-format (changed lines only)
+            entry: tools/lint/git-clang-format.sh
+            language: script
+            files: ^(src|custom)/.*\.(cc|cpp|cxx|h|hpp)$
+          - id: qmllint
+            name: qmllint
+            entry: qmllint
+            language: system
+            files: ^(src|custom)/.*\.qml$
