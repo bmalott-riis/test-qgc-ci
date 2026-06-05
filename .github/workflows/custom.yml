@@ -24,9 +24,27 @@ on:
 #   cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
 
 jobs:
-    build-android:
+    check-custom:
         runs-on: ubuntu-latest
-        if: ${{ hashFiles('custom/**') != '' }}
+        outputs:
+            has_custom: ${{ steps.check.outputs.has_custom }}
+        steps:
+            - uses: actions/checkout@v4
+              with:
+                  sparse-checkout: custom
+                  sparse-checkout-cone-mode: false
+            - id: check
+              run: |
+                  if [ -d custom ] && [ -n "$(ls -A custom 2>/dev/null)" ]; then
+                      echo "has_custom=true" >> "$GITHUB_OUTPUT"
+                  else
+                      echo "has_custom=false" >> "$GITHUB_OUTPUT"
+                  fi
+
+    build-android:
+        needs: check-custom
+        if: needs.check-custom.outputs.has_custom == 'true'
+        runs-on: ubuntu-latest
 
         strategy:
             matrix:
@@ -107,8 +125,9 @@ jobs:
                   github_token: ${{ secrets.GITHUB_TOKEN }}
 
     build-linux:
+        needs: check-custom
+        if: needs.check-custom.outputs.has_custom == 'true'
         runs-on: ubuntu-22.04
-        if: ${{ hashFiles('custom/**') != '' }}
 
         strategy:
             matrix:
