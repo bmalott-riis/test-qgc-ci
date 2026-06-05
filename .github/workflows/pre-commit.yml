@@ -20,7 +20,7 @@ jobs:
               with:
                   # Full history so git-clang-format can diff against the PR base.
                   fetch-depth: 0
-            - uses: actions/setup-python@v5
+            - uses: actions/setup-python@v6
             - name: Install clang-format 17
               run: |
                   sudo apt-get update
