@@ -16,7 +16,7 @@ jobs:
         env:
             SKIP: qmllint
         steps:
-            - uses: actions/checkout@v4
+            - uses: actions/checkout@v6
               with:
                   # Full history so git-clang-format can diff against the PR base.
                   fetch-depth: 0
