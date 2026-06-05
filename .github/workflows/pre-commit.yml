@@ -1,6 +1,15 @@
 name: pre-commit
 
-on: [push, pull_request]
+on:
+    # Run on PRs (checks the changed lines) and on pushes to integration
+    # branches only. Scoping push to these branches avoids a duplicate run when
+    # pushing to a branch that already has an open PR.
+    push:
+        branches:
+            - master
+            - main
+            - "Stable*"
+    pull_request:
 
 jobs:
     pre-commit:
